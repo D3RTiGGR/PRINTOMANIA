@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Print Lab Tycoon</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2e; color: #cdd6f4; text-align: center; padding: 20px; }
+        .card { background-color: #313244; border-radius: 12px; padding: 20px; margin: 15px auto; max-width: 500px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        button { background-color: #89b4fa; color: #11111b; border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin: 5px; }
+        button:hover { background-color: #b4befe; }
+        button:disabled { background-color: #585b70; cursor: not-allowed; }
+        #printer-space { border: 2px dashed #f38ba8; min-height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; margin-top: 15px; border-radius: 8px; }
+        .spaghetti { background-color: #f9e2af; color: #11111b; padding: 10px; border-radius: 50%; font-weight: bold; cursor: pointer; animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+        .progress-bar { width: 80%; background-color: #45475a; height: 20px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress { width: 0%; height: 100%; background-color: #a6e3a1; transition: width 0.2s; }
+    </style>
+</head>
+<body>
+
+    <h1>🖨️ 3D Print Lab Tycoon</h1>
+
+    <!-- Ressourcen -->
+    <div class="card">
+        <h3>Dashboard</h3>
+        <p>💰 Geld: <strong><span id="money">50</span> €</strong></p>
+        <p>🧵 Filament (PLA): <strong><span id="filament">500</span> g</strong></p>
+        <button onclick="buyFilament()">100g Filament kaufen (10€)</button>
+    </div>
+
+    <!-- Drucker Station -->
+    <div class="card">
+        <h3>Ender-3 Bettschubser</h3>
+        <p>Status: <span id="status">Bereit</span></p>
+        <div class="progress-bar"><div id="progress" class="progress"></div></div>
+        
+        <div id="printer-space">
+            <p id="printer-message">Kein aktiver Druckauftrag.</p>
+        </div>
+
+        <button id="start-btn" onclick="startPrint()">Neuen Druck starten (Kosten: 50g Filament)</button>
+    </div>
+
+    <script>
+        let money = 50;
+        let filament = 500;
+        let isPrinting = false;
+        let printProgress = 0;
+        let printInterval;
+        let hasSpaghetti = false;
+
+        function updateUI() {
+            document.getElementById('money').innerText = money;
+            document.getElementById('filament').innerText = filament;
+            document.getElementById('start-btn').disabled = isPrinting || filament < 50;
+        }
+
+        function buyFilament() {
+            if (money >= 10) {
+                money -= 10;
+                filament += 100;
+                updateUI();
+            }
+        }
+
+        function startPrint() {
+            if (isPrinting || filament < 50) return;
+
+            filament -= 50;
+            isPrinting = true;
+            printProgress = 0;
+            hasSpaghetti = false;
+            
+            document.getElementById('status').innerText = "Druckt...";
+            document.getElementById('printer-message').innerText = "Druck läuft...";
+            updateUI();
+
+            printInterval = setInterval(() => {
+                printProgress += 5;
+                document.getElementById('progress').style.width = printProgress + "%";
+
+                // Zufälliges Spaghetti-Event bei ca. 50% Fortgang
+                if (printProgress === 50 && Math.random() > 0.4) {
+                    triggerSpaghetti();
+                }
+
+                if (printProgress >= 100) {
+                    finishPrint(true);
+                }
+            }, 300);
+        }
+
+        function triggerSpaghetti() {
+            hasSpaghetti = true;
+            const space = document.getElementById('printer-space');
+            space.innerHTML = `<div class="spaghetti" onclick="fixSpaghetti()">⚠️ SPAGHETTI ALARM! KLICKE HIER ZUM ENTFERNEN! ⚠️</div>`;
+            
+            // Wenn man nicht innerhalb von 3 Sekunden klickt, schlägt der Druck fehl
+            setTimeout(() => {
+                if (hasSpaghetti) {
+                    finishPrint(false);
+                }
+            }, 3000);
+        }
+
+        function fixSpaghetti() {
+            hasSpaghetti = false;
+            document.getElementById('printer-space').innerHTML = `<p style="color: #a6e3a1;">Gefahr gebannt! Druck läuft weiter...</p>`;
+        }
+
+        function finishPrint(success) {
+            clearInterval(printInterval);
+            isPrinting = false;
+            document.getElementById('progress').style.width = "0%";
+
+            if (success) {
+                money += 35; // Gewinn
+                document.getElementById('status').innerText = "Fertig!";
+                document.getElementById('printer-message').innerText = "Druck erfolgreich verkauft! (+35€)";
+            } else {
+                document.getElementById('status').innerText = "Fehlgeschlagen!";
+                document.getElementById('printer-message').innerText = "💥 FEHLDRUCK! Spaghetti-Monster hat den Druck zerstört!";
+            }
+            updateUI();
+        }
+    </script>
+</body>
+</html>
